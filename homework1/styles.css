@@ -1,0 +1,72 @@
+body {
+    font-family: Arial, sans-serif;
+    direction: rtl;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    color: rgb(42, 128, 120);
+}
+
+h2 {
+    color: rgb(121, 72, 102);
+    padding: 20px 0;
+    background-color: rgba(165, 143, 0, 0.1);
+    margin: 0;
+    border-bottom: 2px solid rgb(165, 143, 0);
+}
+
+input.variable {
+    display: block;
+    margin: 15px auto;
+    padding: 10px;
+    font-size: 16px;
+    width: 250px;
+    border: 2px solid rgb(42, 128, 120);
+    border-radius: 5px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input.variable:focus {
+    outline: none;
+    border-color: rgb(165, 143, 0);
+    box-shadow: 0 0 5px rgba(165, 143, 0, 0.5);
+}
+
+.formula-container {
+    margin: 25px auto;
+    padding: 15px;
+    width: 300px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.formula-container label {
+    font-size: 18px;
+    font-weight: bold;
+    color: rgb(121, 72, 102);
+    display: block;
+    margin-bottom: 10px;
+}
+
+input.result {
+    width: 200px;
+    font-size: 18px;
+    text-align: center;
+    font-weight: bold;
+    color: rgb(42, 128, 120);
+    border: 2px dashed rgb(165, 143, 0);
+    background-color: rgba(42, 128, 120, 0.1);
+    margin-top: 5px;
+    padding: 8px;
+    border-radius: 5px;
+}
+
+@media (max-width: 400px) {
+    input.variable, 
+    input.result,
+    .formula-container {
+        width: 90%;
+    }
+}

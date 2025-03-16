@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حسابگر پویا</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: center;
+            margin-top: 50px;
+        }
+        input {
+            display: block;
+            margin: 10px auto;
+            padding: 5px;
+            font-size: 16px;
+        }
+        .formula-container {
+            margin-top: 20px;
+        }
+        .formula-container label {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .result {
+            width: 200px;
+            font-size: 18px;
+            text-align: center;
+            font-weight: bold;
+            color: #2E86C1;
+            border: none;
+            background-color: #f0f0f0;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>حسابگر پویا</h2>
+
+    <input class="variable" type="text" id="fee" placeholder="واحد قیمت"/>
+    <input class="variable" type="text" id="count" placeholder="تعداد"/>
+    <input class="variable" type="text" id="discount" placeholder="تخفیف"/>
+    <input class="variable" type="text" id="tax" placeholder="مالیات"/>
+
+    <div class="formula-container">
+        <label>قیمت کل</label>
+        <formula evaluator="count * fee - discount"></formula>
+        <input type="text" class="result" id="result1" readonly/>
+    </div>
+
+    <div class="formula-container">
+        <label>قیمت با مالیات</label>
+        <formula evaluator="(count * fee - discount) + tax"></formula>
+        <input type="text" class="result" id="result2" readonly/>
+    </div>
+
+    <div class="formula-container">
+        <label>میانگین قیمت هر واحد</label>
+        <formula evaluator="(count * fee - discount) / count"></formula>
+        <input type="text" class="result" id="result3" readonly/>
+    </div>
+
+    <script src="script.js"></script>
+    <link rel="stylesheet" href="styles.css">
+
+</body>
+</html>
