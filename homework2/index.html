@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painting App</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-100 w-screen h-screen m-0 p-0 overflow-hidden">
+  <div id="root"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/react@17/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+
+    const SHAPES = [
+      { type: 'circle', icon: <div className="w-14 h-14 rounded-full border-4 border-black mx-auto"></div> },
+      { type: 'square', icon: <div className="w-14 h-14 border-4 border-black mx-auto"></div> },
+      { type: 'triangle', icon: (
+        <svg width="56" height="56" className="mx-auto"><polygon points="28,10 50,46 6,46" fill="white" stroke="black" strokeWidth="4"/></svg>
+      ) },
+    ];
+
+
+    function Header({ title, setTitle, onExport, onImport }) {
+      const fileInputRef = React.useRef();
+      return (
+        <div className="flex justify-between items-center border-b-2 border-gray-300 p-4 bg-white w-full">
+          <input
+            className="text-2xl font-bold border-b-2 border-gray-300 focus:border-blue-400 outline-none bg-transparent w-1/2"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="Painting Title"
+            maxLength={32}
+            style={{ minWidth: 0 }}
+          />
+          <div className="space-x-2 flex items-center">
+            <button className="border px-4 py-2" onClick={onExport}>Export</button>
+            <button className="border px-4 py-2" onClick={() => fileInputRef.current.click()}>Import</button>
+            <input
+              type="file"
+              accept="application/json"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={onImport}
+            />
+          </div>
+        </div>
+      );
+    }
+
+
+    function Tools({ onDragStart }) {
+      return (
+        <div className="border-l-2 border-gray-200 p-8 flex flex-col items-center min-w-[220px] h-full bg-white">
+          <span className="text-xl font-semibold mb-8">Tools</span>
+          <div className="flex flex-col items-center gap-12 mt-2">
+            {SHAPES.map((shape, idx) => (
+              <div
+                key={shape.type}
+                draggable
+                onDragStart={e => onDragStart(e, shape.type)}
+                className="cursor-grab active:cursor-grabbing"
+                title={`Drag ${shape.type}`}
+              >
+                {shape.icon}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+
+    function Canvas({ shapes, onDrop, onDragOver, onShapeDoubleClick }) {
+      return (
+        <div
+          className="flex-1 h-full bg-white relative overflow-hidden"
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          id="canvas-area"
+        >
+          {shapes.map((shape, idx) => {
+            let shapeEl;
+            if (shape.type === 'circle') {
+              shapeEl = <div className="w-14 h-14 rounded-full border-4 border-black bg-white absolute" style={{ left: shape.x, top: shape.y, zIndex: 1 }} key={idx} onDoubleClick={() => onShapeDoubleClick(idx)}></div>;
+            } else if (shape.type === 'square') {
+              shapeEl = <div className="w-14 h-14 border-4 border-black bg-white absolute" style={{ left: shape.x, top: shape.y, zIndex: 1 }} key={idx} onDoubleClick={() => onShapeDoubleClick(idx)}></div>;
+            } else if (shape.type === 'triangle') {
+              shapeEl = (
+                <svg width="56" height="56" style={{ position: 'absolute', left: shape.x, top: shape.y, zIndex: 1 }} key={idx} onDoubleClick={() => onShapeDoubleClick(idx)}>
+                  <polygon points="28,10 50,46 6,46" fill="white" stroke="black" strokeWidth="4"/>
+                </svg>
+              );
+            }
+            return shapeEl;
+          })}
+        </div>
+      );
+    }
+
+
+    function Footer({ counts }) {
+      return (
+        <div className="border-t-2 border-gray-300 p-4 flex items-center justify-center bg-white w-full">
+          <div className="flex items-center space-x-16">
+            <div className="flex items-center space-x-1">
+              <div className="w-8 h-8 rounded-full border-4 border-black"></div>
+              <span className="ml-1">{counts.circle}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-8 h-8 border-4 border-black"></div>
+              <span className="ml-1">{counts.square}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <svg width="32" height="32" viewBox="0 0 32 32" className="inline-block"><polygon points="16,6 28,26 4,26" fill="white" stroke="black" strokeWidth="4"/></svg>
+              <span className="ml-1">{counts.triangle}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+
+    function App() {
+      const [dragShape, setDragShape] = React.useState(null);
+      const [shapes, setShapes] = React.useState([]);
+      const [title, setTitle] = React.useState('Painting Title');
+
+
+      const counts = shapes.reduce((acc, s) => {
+        acc[s.type] = (acc[s.type] || 0) + 1;
+        return acc;
+      }, { circle: 0, square: 0, triangle: 0 });
+
+
+      const handleDragStart = (e, type) => {
+        setDragShape(type);
+      };
+
+
+      const handleDragOver = e => {
+        e.preventDefault();
+      };
+
+
+      const handleDrop = e => {
+        e.preventDefault();
+        const canvasRect = document.getElementById('canvas-area').getBoundingClientRect();
+        const x = e.clientX - canvasRect.left - 28; // center shape (56/2)
+        const y = e.clientY - canvasRect.top - 28;
+        if (dragShape) {
+          setShapes([...shapes, { type: dragShape, x, y }]);
+          setDragShape(null);
+        }
+      };
+
+
+      const handleExport = () => {
+        const data = { title, shapes };
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title || 'painting'}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+
+
+      const handleImport = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = evt => {
+          try {
+            const data = JSON.parse(evt.target.result);
+            if (data && Array.isArray(data.shapes) && typeof data.title === 'string') {
+              setTitle(data.title);
+              setShapes(data.shapes);
+            } else {
+              alert('Invalid painting file.');
+            }
+          } catch {
+            alert('Invalid JSON file.');
+          }
+        };
+        reader.readAsText(file);
+
+        e.target.value = '';
+      };
+
+      return (
+        <div className="w-screen h-screen flex flex-col bg-gray-100">
+          <Header title={title} setTitle={setTitle} onExport={handleExport} onImport={handleImport} />
+          <div className="flex flex-1 flex-row min-h-0 min-w-0">
+            <Canvas shapes={shapes} onDrop={handleDrop} onDragOver={handleDragOver} onShapeDoubleClick={idx => setShapes(shapes => shapes.filter((_, i) => i !== idx))} />
+            <Tools onDragStart={handleDragStart} />
+          </div>
+          <Footer counts={counts} />
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
