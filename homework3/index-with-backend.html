@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painting App with Backend</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-100 w-screen h-screen m-0 p-0 overflow-hidden">
+  <div id="root"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/react@17/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+
+    const SHAPES = [
+      { type: 'circle', icon: <div className="w-14 h-14 rounded-full border-4 border-black mx-auto"></div> },
+      { type: 'square', icon: <div className="w-14 h-14 border-4 border-black mx-auto"></div> },
+      { type: 'triangle', icon: (
+        <svg width="56" height="56" className="mx-auto"><polygon points="28,10 50,46 6,46" fill="white" stroke="black" strokeWidth="4"/></svg>
+      ) },
+    ];
+
+    const API_BASE_URL = 'http://localhost:8080/api';
+
+    function LoginModal({ isOpen, onLogin, onClose }) {
+      const [userName, setUserName] = React.useState('');
+      const [isRegistering, setIsRegistering] = React.useState(false);
+      const [message, setMessage] = React.useState('');
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!userName.trim()) return;
+
+        try {
+          if (isRegistering) {
+            const response = await fetch(`${API_BASE_URL}/users/register`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: userName.trim() })
+            });
+            
+            if (response.ok) {
+              onLogin(userName.trim());
+              setMessage('User registered successfully!');
+            } else {
+              const error = await response.json();
+              setMessage(error.error || 'Registration failed');
+            }
+          } else {
+            // Check if user exists
+            const response = await fetch(`${API_BASE_URL}/users/${userName.trim()}/exists`);
+            const data = await response.json();
+            
+            if (data.exists) {
+              onLogin(userName.trim());
+              setMessage('Login successful!');
+            } else {
+              setMessage('User not found. Please register first.');
+            }
+          }
+        } catch (error) {
+          setMessage('Network error. Please try again.');
+        }
+      };
+
+      if (!isOpen) return null;
+
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold mb-6 text-center">
+              {isRegistering ? 'Register' : 'Login'}
+            </h2>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">User Name:</label>
+                <input
+                  type="text"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  placeholder="Enter your name"
+                  required
+                />
+              </div>
+              
+              {message && (
+                <div className={`p-2 rounded text-sm ${message.includes('error') || message.includes('failed') || message.includes('not found') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                  {message}
+                </div>
+              )}
+              
+              <div className="flex space-x-2">
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                >
+                  {isRegistering ? 'Register' : 'Login'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsRegistering(!isRegistering)}
+                  className="flex-1 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                >
+                  {isRegistering ? 'Switch to Login' : 'Switch to Register'}
+                </button>
+              </div>
+              
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
+              >
+                Cancel
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    function Header({ title, setTitle, onSave, onLoad, currentUser, onLogout, setShowLoginModal }) {
+      const [showLoadModal, setShowLoadModal] = React.useState(false);
+      const [drawings, setDrawings] = React.useState([]);
+      const [loading, setLoading] = React.useState(false);
+
+      const loadUserDrawings = async () => {
+        if (!currentUser) return;
+        
+        setLoading(true);
+        try {
+          const response = await fetch(`${API_BASE_URL}/drawings/${currentUser}`);
+          if (response.ok) {
+            const data = await response.json();
+            setDrawings(data);
+          }
+        } catch (error) {
+          console.error('Failed to load drawings:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleLoadDrawing = async (drawingId) => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/drawings/${currentUser}/${drawingId}`);
+          if (response.ok) {
+            const drawing = await response.json();
+            setTitle(drawing.title);
+            onLoad(drawing.shapes);
+            setShowLoadModal(false);
+          }
+        } catch (error) {
+          console.error('Failed to load drawing:', error);
+        }
+      };
+
+      const handleDeleteDrawing = async (drawingId) => {
+        if (!confirm('Are you sure you want to delete this drawing?')) return;
+        
+        try {
+          const response = await fetch(`${API_BASE_URL}/drawings/${currentUser}/${drawingId}`, {
+            method: 'DELETE'
+          });
+          if (response.ok) {
+            loadUserDrawings();
+          }
+        } catch (error) {
+          console.error('Failed to delete drawing:', error);
+        }
+      };
+
+      return (
+        <div className="flex justify-between items-center border-b-2 border-gray-300 p-4 bg-white w-full">
+          <div className="flex items-center space-x-4">
+            <input
+              className="text-2xl font-bold border-b-2 border-gray-300 focus:border-blue-400 outline-none bg-transparent w-64"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="Painting Title"
+              maxLength={32}
+              style={{ minWidth: 0 }}
+            />
+            {currentUser && (
+              <span className="text-sm text-gray-600">Logged in as: {currentUser}</span>
+            )}
+          </div>
+          
+          <div className="space-x-2 flex items-center">
+            {currentUser ? (
+              <>
+                <button className="border px-4 py-2 hover:bg-gray-100" onClick={onSave}>Save</button>
+                <button className="border px-4 py-2 hover:bg-gray-100" onClick={() => {
+                  loadUserDrawings();
+                  setShowLoadModal(true);
+                }}>Load</button>
+                <button className="border px-4 py-2 hover:bg-gray-100" onClick={onLogout}>Logout</button>
+              </>
+            ) : (
+              <button className="border px-4 py-2 hover:bg-gray-100" onClick={() => setShowLoginModal(true)}>Login</button>
+            )}
+          </div>
+
+          {/* Load Modal */}
+          {showLoadModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
+                <h3 className="text-xl font-bold mb-4">Load Drawing</h3>
+                
+                {!currentUser ? (
+                  <div className="text-center">
+                    <p className="mb-4">Please login to load your drawings</p>
+                    <button
+                      onClick={() => {
+                        setShowLoadModal(false);
+                        setShowLoginModal(true);
+                      }}
+                      className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                    >
+                      Login
+                    </button>
+                    <button
+                      onClick={() => setShowLoadModal(false)}
+                      className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 ml-2"
+                    >
+                      Close
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    {loading ? (
+                      <p>Loading...</p>
+                    ) : drawings.length === 0 ? (
+                      <p>No drawings found</p>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {drawings.map(drawing => (
+                          <div key={drawing.id} className="flex justify-between items-center p-2 border rounded">
+                            <span>{drawing.title}</span>
+                            <div className="space-x-2">
+                              <button
+                                onClick={() => handleLoadDrawing(drawing.id)}
+                                className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
+                              >
+                                Load
+                              </button>
+                              <button
+                                onClick={() => handleDeleteDrawing(drawing.id)}
+                                className="bg-red-500 text-white px-2 py-1 rounded text-sm"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => setShowLoadModal(false)}
+                      className="mt-4 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                    >
+                      Close
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function Tools({ onDragStart }) {
+      return (
+        <div className="border-l-2 border-gray-200 p-8 flex flex-col items-center min-w-[220px] h-full bg-white">
+          <span className="text-xl font-semibold mb-8">Tools</span>
+          <div className="flex flex-col items-center gap-12 mt-2">
+            {SHAPES.map((shape, idx) => (
+              <div
+                key={shape.type}
+                draggable
+                onDragStart={e => onDragStart(e, shape.type)}
+                className="cursor-grab active:cursor-grabbing"
+                title={`Drag ${shape.type}`}
+              >
+                {shape.icon}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function Canvas({ shapes, onDrop, onDragOver, onShapeDoubleClick }) {
+      return (
+        <div
+          className="flex-1 h-full bg-white relative overflow-hidden"
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          id="canvas-area"
+        >
+          {shapes.map((shape, idx) => {
+            let shapeEl;
+            if (shape.type === 'circle') {
+              shapeEl = <div className="w-14 h-14 rounded-full border-4 border-black bg-white absolute" style={{ left: shape.x, top: shape.y, zIndex: 1 }} key={idx} onDoubleClick={() => onShapeDoubleClick(idx)}></div>;
+            } else if (shape.type === 'square') {
+              shapeEl = <div className="w-14 h-14 border-4 border-black bg-white absolute" style={{ left: shape.x, top: shape.y, zIndex: 1 }} key={idx} onDoubleClick={() => onShapeDoubleClick(idx)}></div>;
+            } else if (shape.type === 'triangle') {
+              shapeEl = (
+                <svg width="56" height="56" style={{ position: 'absolute', left: shape.x, top: shape.y, zIndex: 1 }} key={idx} onDoubleClick={() => onShapeDoubleClick(idx)}>
+                  <polygon points="28,10 50,46 6,46" fill="white" stroke="black" strokeWidth="4"/>
+                </svg>
+              );
+            }
+            return shapeEl;
+          })}
+        </div>
+      );
+    }
+
+    function Footer({ counts }) {
+      return (
+        <div className="border-t-2 border-gray-300 p-4 flex items-center justify-center bg-white w-full">
+          <div className="flex items-center space-x-16">
+            <div className="flex items-center space-x-1">
+              <div className="w-8 h-8 rounded-full border-4 border-black"></div>
+              <span className="ml-1">{counts.circle}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-8 h-8 border-4 border-black"></div>
+              <span className="ml-1">{counts.square}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <svg width="32" height="32" viewBox="0 0 32 32" className="inline-block"><polygon points="16,6 28,26 4,26" fill="white" stroke="black" strokeWidth="4"/></svg>
+              <span className="ml-1">{counts.triangle}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [dragShape, setDragShape] = React.useState(null);
+      const [shapes, setShapes] = React.useState([]);
+      const [title, setTitle] = React.useState('Painting Title');
+      const [currentUser, setCurrentUser] = React.useState(null);
+      const [showLoginModal, setShowLoginModal] = React.useState(false);
+
+      const counts = shapes.reduce((acc, s) => {
+        acc[s.type] = (acc[s.type] || 0) + 1;
+        return acc;
+      }, { circle: 0, square: 0, triangle: 0 });
+
+      const handleDragStart = (e, type) => {
+        setDragShape(type);
+      };
+
+      const handleDragOver = e => {
+        e.preventDefault();
+      };
+
+      const handleDrop = e => {
+        e.preventDefault();
+        const canvasRect = document.getElementById('canvas-area').getBoundingClientRect();
+        const x = e.clientX - canvasRect.left - 28;
+        const y = e.clientY - canvasRect.top - 28;
+        if (dragShape) {
+          setShapes([...shapes, { type: dragShape, x, y }]);
+          setDragShape(null);
+        }
+      };
+
+      const handleSave = async () => {
+        if (!currentUser) {
+          alert('Please login to save your drawing');
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/drawings/${currentUser}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: title,
+              shapes: shapes
+            })
+          });
+
+          if (response.ok) {
+            alert('Drawing saved successfully!');
+          } else {
+            const error = await response.json();
+            alert('Failed to save drawing: ' + error.error);
+          }
+        } catch (error) {
+          alert('Network error. Please try again.');
+        }
+      };
+
+      const handleLoad = (loadedShapes) => {
+        setShapes(loadedShapes);
+      };
+
+      const handleLogin = (userName) => {
+        setCurrentUser(userName);
+        setShowLoginModal(false);
+      };
+
+      const handleLogout = () => {
+        setCurrentUser(null);
+        setShapes([]);
+        setTitle('Painting Title');
+      };
+
+      return (
+        <div className="w-screen h-screen flex flex-col bg-gray-100">
+          <Header 
+            title={title} 
+            setTitle={setTitle} 
+            onSave={handleSave}
+            onLoad={handleLoad}
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            setShowLoginModal={setShowLoginModal}
+          />
+          <div className="flex flex-1 flex-row min-h-0 min-w-0">
+            <Canvas 
+              shapes={shapes} 
+              onDrop={handleDrop} 
+              onDragOver={handleDragOver} 
+              onShapeDoubleClick={idx => setShapes(shapes => shapes.filter((_, i) => i !== idx))} 
+            />
+            <Tools onDragStart={handleDragStart} />
+          </div>
+          <Footer counts={counts} />
+          
+          <LoginModal 
+            isOpen={showLoginModal}
+            onLogin={handleLogin}
+            onClose={() => setShowLoginModal(false)}
+          />
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html> 
