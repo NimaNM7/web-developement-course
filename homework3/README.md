@@ -1,44 +1,35 @@
-# Drawing App Backend
+اپلیکیشن نقاشی - بک‌اند
+بررسی اجمالی پروژه
+خوش آمدید به بک‌اند اپلیکیشن نقاشی! این پروژه یک بک‌اند مبتنی بر Spring Boot است که به کاربران امکان می‌دهد نقاشی‌های خود را ذخیره و بازیابی کنند. این بک‌اند با ارائه APIهای RESTful، امکان ثبت‌نام کاربران، مدیریت نقاشی‌ها و جستجوی آن‌ها را فراهم می‌کند. این پروژه به گونه‌ای طراحی شده است که به راحتی با یک فرانت‌اند React ادغام شود و از اشکال مختلف (دایره، مربع، مثلث) پشتیبانی می‌کند.
+ویژگی‌ها
 
-This is a Spring Boot backend for the drawing application that allows users to save and retrieve their drawings.
+ثبت‌نام کاربر: ثبت‌نام ساده با استفاده از نام کاربر.
+ذخیره نقاشی‌ها: ذخیره نقاشی‌ها با اشکال مختلف (دایره، مربع، مثلث).
+بازیابی نقاشی‌ها: دریافت نقاشی‌های ذخیره‌شده یک کاربر.
+جستجوی نقاشی‌ها: جستجوی نقاشی‌ها بر اساس عنوان.
+حذف نقاشی‌ها: امکان حذف نقاشی‌های خاص.
+APIهای RESTful: رابط‌های برنامه‌نویسی کاربردی ساده و استاندارد.
 
-## Features
-
-- User registration with just a name
-- Save drawings with shapes (circle, square, triangle)
-- Retrieve user's drawings
-- Search drawings by title
-- Delete drawings
-- RESTful API endpoints
-
-## API Endpoints
-
-### User Management
-
-#### Register User
-```
+نقاط پایانی API
+مدیریت کاربر
+ثبت‌نام کاربر
 POST /api/users/register
 Content-Type: application/json
 
 {
-  "name": "user_name"
+  "name": "نام_کاربر"
 }
-```
 
-#### Check if User Exists
-```
+بررسی وجود کاربر
 GET /api/users/{name}/exists
-```
 
-### Drawing Management
-
-#### Save Drawing
-```
+مدیریت نقاشی
+ذخیره نقاشی
 POST /api/drawings/{userName}
 Content-Type: application/json
 
 {
-  "title": "My Drawing",
+  "title": "نقاشی من",
   "shapes": [
     {
       "type": "circle",
@@ -52,77 +43,76 @@ Content-Type: application/json
     }
   ]
 }
-```
 
-#### Get User's Drawings
-```
+دریافت نقاشی‌های کاربر
 GET /api/drawings/{userName}
-```
 
-#### Get Specific Drawing
-```
+دریافت نقاشی خاص
 GET /api/drawings/{userName}/{drawingId}
-```
 
-#### Search Drawings by Title
-```
-GET /api/drawings/{userName}/search?title=search_term
-```
+جستجوی نقاشی‌ها بر اساس عنوان
+GET /api/drawings/{userName}/search?title=عبارت_جستجو
 
-#### Delete Drawing
-```
+حذف نقاشی
 DELETE /api/drawings/{userName}/{drawingId}
-```
 
-## Running the Application
+راه‌اندازی برنامه
+پیش‌نیازها
 
-1. Make sure you have Java 11+ installed
-2. Navigate to the project directory
-3. Run the application:
-   ```bash
-   mvn spring-boot:run
-   ```
-4. The application will start on `http://localhost:8080`
+جاوا نسخه 11 یا بالاتر
+Maven برای مدیریت وابستگی‌ها
 
-## Database
+مراحل اجرا
 
-- Uses H2 in-memory database for development
-- H2 console available at `http://localhost:8080/h2-console`
-- Database credentials: username=sa, password=password
+به دایرکتوری پروژه بروید.
 
-## Example Usage
+دستور زیر را اجرا کنید:
+mvn spring-boot:run
 
-### 1. Register a user
-```bash
+
+برنامه در آدرس http://localhost:8080 اجرا خواهد شد.
+
+
+پایگاه داده
+
+از پایگاه داده H2 (در حافظه) برای توسعه استفاده می‌شود.
+کنسول H2 در آدرس http://localhost:8080/h2-console در دسترس است.
+
+نمونه استفاده
+
+ثبت‌نام کاربر:
 curl -X POST http://localhost:8080/api/users/register \
   -H "Content-Type: application/json" \
-  -d '{"name": "john"}'
-```
+  -d '{"name": "جان"}'
 
-### 2. Save a drawing
-```bash
-curl -X POST http://localhost:8080/api/drawings/john \
+
+ذخیره نقاشی:
+curl -X POST http://localhost:8080/api/drawings/جان \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "My First Drawing",
+    "title": "اولین نقاشی من",
     "shapes": [
       {"type": "circle", "x": 100.0, "y": 100.0},
       {"type": "square", "x": 200.0, "y": 200.0}
     ]
   }'
-```
 
-### 3. Get user's drawings
-```bash
-curl http://localhost:8080/api/drawings/john
-```
 
-## Integration with Frontend
+دریافت نقاشی‌های کاربر:
+curl http://localhost:8080/api/drawings/جان
 
-To integrate this backend with your React frontend, you'll need to:
 
-1. Update the frontend to make API calls to these endpoints
-2. Add user registration/login functionality
-3. Replace the local export/import with server save/load operations
 
-The backend is designed to work with the existing frontend structure and supports all the shape types (circle, square, triangle) that your React app uses. 
+ادغام با فرانت‌اند
+برای ادغام این بک‌اند با فرانت‌اند React، باید:
+
+فراخوانی‌های API را در فرانت‌اند به نقاط پایانی فوق تنظیم کنید.
+قابلیت ثبت‌نام و ورود کاربر را اضافه کنید.
+عملیات ذخیره و بارگذاری محلی را با عملیات سرور جایگزین کنید.
+
+این بک‌اند با ساختار فرانت‌اند موجود سازگار است و از تمام انواع اشکال (دایره، مربع، مثلث) که اپلیکیشن React شما استفاده می‌کند، پشتیبانی می‌کند.
+مشارکت‌های هوش مصنوعی
+هوش مصنوعی در توسعه این پروژه نقش مهمی ایفا کرد:
+
+وابستگی‌های Maven: از هوش مصنوعی برای انتخاب و پیکربندی بهینه وابستگی‌های Maven (مانند Spring Boot، H2 Database و غیره) استفاده شد تا اطمینان حاصل شود که پروژه سبک و کارآمد است.
+قالب‌بندی README: هوش مصنوعی برای ساختاردهی و قالب‌بندی این فایل README به کار گرفته شد تا خوانایی و حرفه‌ای بودن آن بهبود یابد.
