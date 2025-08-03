@@ -1,9 +1,16 @@
 package com.example.drawingapp.entity;
 
-import javax.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "TBL_SHAPES")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Shape {
     
     @Id
@@ -24,52 +31,10 @@ public class Shape {
     @JoinColumn(name = "DRAWING_ID", nullable = false)
     private Drawing drawing;
     
-    public Shape() {}
-    
     public Shape(ShapeType type, Double x, Double y) {
         this.type = type;
         this.x = x;
         this.y = y;
-    }
-    
-    public Long getId() {
-        return id;
-    }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public ShapeType getType() {
-        return type;
-    }
-    
-    public void setType(ShapeType type) {
-        this.type = type;
-    }
-    
-    public Double getX() {
-        return x;
-    }
-    
-    public void setX(Double x) {
-        this.x = x;
-    }
-    
-    public Double getY() {
-        return y;
-    }
-    
-    public void setY(Double y) {
-        this.y = y;
-    }
-    
-    public Drawing getDrawing() {
-        return drawing;
-    }
-    
-    public void setDrawing(Drawing drawing) {
-        this.drawing = drawing;
     }
     
     public enum ShapeType {
